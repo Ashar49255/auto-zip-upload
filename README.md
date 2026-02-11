@@ -6,7 +6,7 @@
 
 This contains everything you need to run your app locally.
 
-View your app in AI Studio: https://ai.studio/apps/bundled/research_visualization
+View your app in AI Studio: https://ai.studio/apps/bundled/gemini_slingshot
 
 ## Run Locally
 
