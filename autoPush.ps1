@@ -2,39 +2,52 @@ $downloadsPath = "$env:USERPROFILE\Downloads"
 $repoPath = $PSScriptRoot
 $tempPath = "$repoPath\_temp"
 
-# 1. Latest ZIP find karo
+# Find latest ZIP
 $zip = Get-ChildItem $downloadsPath -Filter *.zip |
        Sort-Object LastWriteTime -Descending |
        Select-Object -First 1
 
 if (-not $zip) {
-    Write-Host "❌ Downloads folder me koi ZIP nahi mili"
+    Write-Host "No ZIP file found"
     exit
 }
 
-Write-Host "✅ Latest ZIP:" $zip.Name
+Write-Host "Latest ZIP found:" $zip.Name
 
-# 2. Temp folder clean banao
+# Clean temp folder
 if (Test-Path $tempPath) {
     Remove-Item $tempPath -Recurse -Force
 }
 New-Item -ItemType Directory $tempPath | Out-Null
 
-# 3. Unzip
+# Unzip
 Expand-Archive $zip.FullName $tempPath -Force
 
-# 4. Extracted files repo me copy karo
-Get-ChildItem $tempPath | ForEach-Object {
-    Copy-Item $_.FullName $repoPath -Recurse -Force
+# Get root folder from ZIP
+$extractedFolder = Get-ChildItem $tempPath | Where-Object { $_.PSIsContainer } | Select-Object -First 1
+
+if (-not $extractedFolder) {
+    Write-Host "No folder found inside ZIP"
+    exit
 }
 
-# 5. Temp cleanup
+Write-Host "Extracted folder:" $extractedFolder.Name
+
+# Copy whole folder into repo
+$destination = Join-Path $repoPath $extractedFolder.Name
+
+if (Test-Path $destination) {
+    Remove-Item $destination -Recurse -Force
+}
+
+Copy-Item $extractedFolder.FullName $repoPath -Recurse -Force
+
+# Cleanup temp
 Remove-Item $tempPath -Recurse -Force
 
-# 6. Git push
-git status
+# Git push
 git add .
-git commit -m "Auto upload latest zip"
+git commit -m "Auto upload folder from latest zip"
 git push
 
-Write-Host "🚀 GitHub push successful"
+Write-Host "Folder pushed successfully"
